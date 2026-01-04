@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>本月药品剩余记录</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      background: #f6f7fb;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .day {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      min-height: 90px;
+    }
+
+    .date {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .count {
+      font-size: 14px;
+      color: #444;
+    }
+
+    .empty {
+      visibility: hidden;
+    }
+  </style>
+</head>
+<body>
+
+<h1 id="title"></h1>
+<div id="calendar" class="calendar"></div>
+
+<script>
+  /***************
+   * 基础日期信息
+   ***************/
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-based
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  document.getElementById('title').textContent =
+    `📅 ${year}年${month + 1}月 每晚9点药品剩余`;
+
+  /***************
+   * 药品规则
+   ***************/
+  const anchorDate = new Date('2025-12-25T21:00:00');
+  const boxSize = 28;
+  const anchorPills = 12;
+
+  /**
+   * 计算某天晚上9点的剩余药量
+   */
+  function getPillsAt9PM(date9PM) {
+    if (date9PM < anchorDate) {
+      return null; // 还没开始记录
+    }
+
+    const daysPassed =
+      Math.floor((date9PM - anchorDate) / (24 * 60 * 60 * 1000));
+
+    let pills = anchorPills - daysPassed;
+
+    if (pills <= 0) {
+      // 吃完后循环进入新盒
+      pills = ((pills % boxSize) + boxSize) % boxSize;
+      if (pills === 0) pills = boxSize;
+    }
+
+    return pills;
+  }
+
+  /***************
+   * 构建日历
+   ***************/
+  const calendar = document.getElementById('calendar');
+
+  const firstDay = new Date(year, month, 1).getDay();
+
+  // 补齐月初空格
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'day empty';
+    calendar.appendChild(empty);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement('div');
+    cell.className = 'day';
+
+    const dateLabel = document.createElement('div');
+    dateLabel.className = 'date';
+    dateLabel.textContent = `${month + 1}-${String(day).padStart(2, '0')}`;
+
+    const countLabel = document.createElement('div');
+    countLabel.className = 'count';
+
+    const date9PM = new Date(year, month, day, 21, 0, 0);
+    const pills = getPillsAt9PM(date9PM);
+
+    countLabel.textContent =
+      pills === null
+        ? '晚上9点剩余：—'
+        : `晚上9点剩余：${pills} 片`;
+
+    cell.appendChild(dateLabel);
+    cell.appendChild(countLabel);
+    calendar.appendChild(cell);
+  }
+</script>
+
+</body>
+</html>
